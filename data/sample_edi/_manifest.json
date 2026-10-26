@@ -1,0 +1,1 @@
+{'generated_at': '2026-10-26T17:20:35.537807', 'total_transactions': 50, 'files_per_transaction': 3, 'total_files': 150, 'injected_issues': {'duplicate_po_numbers': ['PO326045', 'PO211098'], 'note': 'Malformed dates, missing segments, out-of-range quantities, and truncations are randomly injected (~5-10% per file type)'}, 'segment_terminator': '*'}
