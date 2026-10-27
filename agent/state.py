@@ -1,18 +1,11 @@
-"""Typed state for the LangGraph agent."""
-from pydantic import BaseModel
-from typing import Optional
-from enum import Enum
+"""Typed state for the LangGraph agent (kept for reference / future use)."""
+from typing import TypedDict, Optional
 
-class AgentMode(str, Enum):
-    NL_QUERY = "nl_query"
-    ANOMALY = "anomaly"
-    REPORT = "report"
-    RAG = "rag"
-
-class AgentState(BaseModel):
+class AgentState(TypedDict):
     question: str
-    mode: AgentMode = AgentMode.NL_QUERY
-    generated_sql: Optional[str] = None
-    result: Optional[str] = None
-    error: Optional[str] = None
-    context: Optional[str] = None  # RAG context
+    plan: str
+    sql: Optional[str]
+    result: Optional[str]
+    answer: Optional[str]
+    error: Optional[str]
+   
