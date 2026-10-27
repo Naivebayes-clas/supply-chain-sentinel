@@ -129,7 +129,8 @@ def build_856(po_number: str, ship_date: datetime) -> str:
 
     # DTM
     lines.append(f"DTM*011*{ship_date.strftime('%Y%m%d')}~")  # Ship date
-    lines.append(f"DTM*016*{(ship_date + timedelta(days=random.randint(2,7))).strftime('%Y%m%d')}~")  # ETA
+    eta_days = random.randint(-3, 7)  # negative = late
+    lines.append(f"DTM*016*{(ship_date + timedelta(days=eta_days)).strftime('%Y%m%d')}~")   
 
     # REF - Related PO
     lines.append(f"REF*PB*{po_number}~")

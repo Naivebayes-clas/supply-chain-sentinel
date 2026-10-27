@@ -1,0 +1,34 @@
+# === Data Layer ===
+pyspark
+delta-spark
+polars
+pandas
+pyarrow
+
+# === Ingestion ===
+pyedi
+
+# === Agent / LLM ===
+langgraph
+langchain
+langchain-openai
+fastmcp
+chromadb
+langfuse
+
+# === API / UI ===
+fastapi
+uvicorn
+streamlit
+pydantic
+
+# === Utils ===
+python-dotenv
+httpx
+structlog
+
+# === Testing ===
+pytest
+pytest-asyncio
+ruff
+mypy

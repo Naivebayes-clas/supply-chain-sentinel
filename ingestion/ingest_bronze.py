@@ -116,6 +116,8 @@ def extract_856(segments: list[dict]) -> dict:
         "related_po": None,
         "ship_from": None,
         "ship_to": None,
+        "ship_to_city": None,
+        "ship_to_province": None,
         "total_weight": None,
         "n_segments": len(segments),
     }
@@ -150,12 +152,16 @@ def extract_856(segments: list[dict]) -> dict:
                     record["ship_to"] = seg["fields"][1]
                     in_ship_to = True
 
+        elif seg["code"] == "N4":
+            if in_ship_to and len(seg["fields"]) >= 2:
+                record["ship_to_city"] = seg["fields"][0]
+                record["ship_to_province"] = seg["fields"][1]
+
         elif seg["code"] == "MAN":
             if len(seg["fields"]) >= 1:
                 record["total_weight"] = seg["fields"][0]
 
-    return record
-
+    return record   
 
 def extract_214(segments: list[dict]) -> dict:
     """Extract key fields from a 214 Motor Carrier Freight Details."""

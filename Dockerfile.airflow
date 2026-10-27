@@ -1,0 +1,21 @@
+FROM apache/airflow:3.0.0
+
+# Install JRE for PySpark (needs root)
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends default-jre-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pipeline deps (must be airflow user, not root)
+USER airflow
+RUN pip install --no-cache-dir \
+    delta-spark==3.0.0 \
+    polars==1.15.0 \
+    pyarrow==17.0.0
+
+# Create extra dirs our pipeline needs
+USER root
+RUN mkdir -p /opt/airflow/pipeline /opt/airflow/ingestion /opt/airflow/data \
+    && chown -R airflow: /opt/airflow
+
+USER airflow
+WORKDIR /opt/airflow 
