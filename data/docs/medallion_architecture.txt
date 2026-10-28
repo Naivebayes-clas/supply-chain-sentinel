@@ -1,0 +1,32 @@
+Medallion Architecture - Supply Chain Sentinel
+
+Bronze Layer:
+- Raw, as-is data from EDI files
+- All 150 records preserved (including bad ones)
+- Schema: flat, string-typed fields
+- Written by: ingestion/ingest_bronze.py
+
+Silver Layer:
+- Cleaned, validated, deduplicated
+- Date validation: rejects month>12, day>31, missing year
+- Deduplication: keeps latest per (po_number, transaction_type)
+- Quarantine: bad records written to silver_quarantine with reason
+- Schema: proper types (DateType, DoubleType, IntegerType)
+- Written by: pipeline/transforms/bronze_to_silver.py
+
+Gold Layer:
+- Aggregated KPIs for business consumption
+- 4 tables:
+  1. kpis_daily: date, total_shipments, on_time_rate, avg_weight_kg
+  2. carrier_perf: carrier_name, on_time_rate, avg_freight_cost, total_freight_cost
+  3. exceptions_by_dest: ship_to_city, late_count, affected_pos
+  4. volume_trend: week, transaction_type, count
+- Written by: pipeline/transforms/silver_to_gold.py
+
+Data Flow:
+EDI Files → Bronze (150) → Silver (137) → Gold (4 tables)
+                    ↓
+          Silver Quarantine (5-7)
+
+Orchestration: Airflow 3 (LocalExecutor)
+Storage: Delta Lake on local filesystem

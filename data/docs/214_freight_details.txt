@@ -1,0 +1,38 @@
+X12 214 - Motor Carrier Freight Details and Invoice
+
+Purpose: Transmit freight charges and carrier information.
+
+Required Segments:
+- ISA / GS / ST (ST*214*control#)
+- BGM: Beginning Segment
+  - BGM*01*Freight_Bill_ID*...
+- REF: Reference
+  - REF*PB*PO_Number = Related PO
+  - REF*CN*Container_Number
+- N1: Name
+  - N1*CN*Carrier_Name (CN = Carrier)
+  - N1*O*Origin_Name
+  - N1*D*Destination_Name
+- N4: City*State*Zip*Country
+- FSN: Freight and Service Notes
+  - FSN*F*Amount = Base Freight Charge
+  - FSN*S*Amount = Surcharges (fuel, accessorials, etc.)
+- SE / GE / IEA
+
+Carrier Performance Metrics:
+- On-time rate: joined via PO to 856 shipments
+- Average freight cost: FSN*F amount
+- Total freight cost: sum of all FSN*F for carrier
+- Shipment volume: count of linked 856 records
+
+Common Carriers in Logistics:
+- XPO Logistics
+- Old Dominion Freight Line
+- FedEx Freight
+- UPS Supply Chain
+- Estes Express Lines
+
+Data Quality:
+- Carrier name must match across 214 records
+- Freight charges must be positive
+- Origin/destination must have valid N4 segments

@@ -1,0 +1,36 @@
+X12 850 - Purchase Order
+
+Purpose: Transmit a purchase order from buyer to seller.
+
+Required Segments:
+- ISA: Interchange Control Header (envelope)
+- GS: Functional Group Header
+- ST: Transaction Set Header (ST*850*control#)
+- BGM: Beginning Segment for Purchase Order
+  - BGM*00*PO_Number*Qualifier*...
+  - Element 2: PO Number (required)
+  - Element 6: Date (CCYYMMDD format)
+- DTM: Date/Time Period
+  - DTM*011*CCYYMMDD = Order Date
+  - DTM*016*CCYYMMDD = Requested Delivery Date
+- N1: Name (ST = Ship To, SF = Ship From, BY = Buy)
+- N3: Address Line
+- N4: Subdivision (City*State*Zip*Country)
+- ITD: Item Detail
+  - ITD*U*Quantity*UOM*Unit_Price
+- PID: Product/Item Description
+- SE: Transaction Set Trailer (count*control#)
+- GE: Functional Group Trailer
+- IEA: Interchange Control Trailer
+
+Data Quality Considerations:
+- PO numbers must be unique across the group
+- Dates must be valid CCYYMMDD (8 digits)
+- Quantities must be positive integers
+- Unit prices must be positive decimals
+
+Common Errors:
+- Missing DTM segments (no order date)
+- Malformed dates (month > 12, day > 31)
+- Duplicate PO numbers in same group
+- Truncated SE segment (missing count or control#)

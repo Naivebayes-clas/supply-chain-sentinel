@@ -1,0 +1,37 @@
+X12 856 - Advance Ship Notice (ASN)
+
+Purpose: Notify receiver that goods are being shipped.
+
+Required Segments:
+- ISA / GS / ST (ST*856*control#)
+- BGM: Beginning Segment for Shipment
+  - BGM*BLSV*Shipment_ID*...
+- DTM: Date/Time
+  - DTM*011*CCYYMMDD = Ship Date (actual)
+  - DTM*016*CCYYMMDD = ETA (expected arrival)
+- REF: Reference
+  - REF*PB*PO_Number = Related Purchase Order
+- N1: Name
+  - N1*SF*Shipper_Name
+  - N1*ST*Ship_To_Name
+- N3: Address
+- N4: City*State*Zip*Country
+- MAN: Manifest
+  - MAN*Total_Weight
+- SE / GE / IEA
+
+Key Relationships:
+- REF*PB links the ASN back to the 850 PO
+- DTM*011 (ship date) vs DTM*016 (ETA) determines on-time status
+- If ship_date > ETA, the shipment is LATE
+
+On-Time Calculation:
+- is_on_time = (ship_date <= eta)
+- On-time rate = count(is_on_time=1) / count(tracked)
+- A shipment is "tracked" if both ship_date and eta are present
+
+Common Errors:
+- Missing REF*PB (can't link to PO)
+- Ship date after ETA (late shipment)
+- Missing MAN segment (no weight data)
+- Invalid dates in DTM segments
