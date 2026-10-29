@@ -131,7 +131,7 @@ services:
       - ./api:/app/api
       - ./data:/app/data
       - ./evals:/app/evals
-      - chroma_data:/app/data/chroma
+      - ./observability:/app/observability    # ← add this line   
     depends_on:
       postgres:
         condition: service_healthy

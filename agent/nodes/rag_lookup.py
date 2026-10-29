@@ -1,20 +1,26 @@
-import re
 """
 RAG Node: retrieves relevant EDI spec context from ChromaDB.
-Used to answer questions like "What segments are required in an 856?"
 """
 import os
+import re
 from pathlib import Path
 
+import chromadb
+from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
+
+_local_ef = ONNXMiniLM_L6_V2()
+
+
 # ──────────────────────────────────────────────
-# Document ingestion (run once to populate ChromaDB)
+# Document ingestion
 # ──────────────────────────────────────────────
 def ingest_docs(docs_dir: str = "data/docs", collection_name: str = "edi_specs"):
     """Chunk and embed EDI spec documents into ChromaDB."""
-    import chromadb
-
     client = chromadb.PersistentClient(path="data/chroma")
-    collection = client.get_or_create_collection(name=collection_name)
+    collection = client.get_or_create_collection(
+        name=collection_name,
+        embedding_function=_local_ef,
+    )
 
     docs_path = Path(docs_dir)
     if not docs_path.exists():
@@ -26,14 +32,12 @@ def ingest_docs(docs_dir: str = "data/docs", collection_name: str = "edi_specs")
 
     for f in sorted(docs_path.glob("*.txt")) + sorted(docs_path.glob("*.md")):
         content = f.read_text()
-        # Simple chunking: ~500 chars with overlap
         chunks = _chunk_text(content, chunk_size=1500, overlap=100)
         for i, chunk in enumerate(chunks):
             all_texts.append(chunk)
             all_metas.append({"source": f.name, "chunk_id": i})
 
     if all_texts:
-        # Add in batches
         batch_size = 100
         for i in range(0, len(all_texts), batch_size):
             batch_texts = all_texts[i:i+batch_size]
@@ -46,14 +50,8 @@ def ingest_docs(docs_dir: str = "data/docs", collection_name: str = "edi_specs")
 
 
 def _chunk_text(text: str, chunk_size: int = 1500, overlap: int = 100) -> list[str]:
-    """
-    Section-aware semantic chunking.
-    Splits on paragraph boundaries (blank lines) and section headers,
-    keeping logical units (e.g. 'Required Segments' lists) intact.
-    Falls back to size-based splitting for sections that exceed chunk_size.
-    """
-    # Split into paragraphs (blocks separated by blank lines)
-    paragraphs = re.split(r'\\n\\s*\\n', text)
+    """Section-aware semantic chunking."""
+    paragraphs = re.split(r'\n\s*\n', text)
 
     chunks = []
     current = ""
@@ -62,13 +60,11 @@ def _chunk_text(text: str, chunk_size: int = 1500, overlap: int = 100) -> list[s
         para = para.strip()
         if not para:
             continue
-
-        # If adding this paragraph would exceed chunk_size, flush current
         if len(current) + len(para) + 2 > chunk_size and current:
             chunks.append(current.strip())
             current = para
         else:
-            current = current + "\\n\\n" + para if current else para
+            current = current + "\n\n" + para if current else para
 
     if current.strip():
         chunks.append(current.strip())
@@ -80,14 +76,12 @@ def _chunk_text(text: str, chunk_size: int = 1500, overlap: int = 100) -> list[s
 # Query
 # ──────────────────────────────────────────────
 def rag_lookup(question: str, n_results: int = 3) -> str:
-    """
-    Search EDI spec docs for relevant context.
-    Returns the top-n chunks as a string.
-    """
-    import chromadb
-
+    """Search EDI spec docs for relevant context."""
     client = chromadb.PersistentClient(path="data/chroma")
-    collection = client.get_or_create_collection(name="edi_specs")
+    collection = client.get_or_create_collection(
+        name="edi_specs",
+        embedding_function=_local_ef,
+    )
 
     if collection.count() == 0:
         return "No EDI spec documents indexed. Run ingest_docs() first."
@@ -107,14 +101,8 @@ def rag_lookup(question: str, n_results: int = 3) -> str:
     return "\n\n---\n\n".join(context_parts)
 
 
-def rag_node(state: dict) -> dict:
-    """LangGraph node: perform RAG lookup and store context."""
-    context = rag_lookup(state["question"])
-    return {"context": context}
-
-
 # ──────────────────────────────────────────────
-# Seed docs (generate placeholder EDI spec summaries)
+# Seed docs
 # ──────────────────────────────────────────────
 def create_seed_docs(docs_dir: str = "data/docs"):
     """Create seed EDI spec documents for RAG testing."""
@@ -160,7 +148,6 @@ Common Errors:
 - Duplicate PO numbers in same group
 - Truncated SE segment (missing count or control#)
 """,
-
         "856_advance_ship_notice.txt": """
 X12 856 - Advance Ship Notice (ASN)
 
@@ -200,7 +187,6 @@ Common Errors:
 - Missing MAN segment (no weight data)
 - Invalid dates in DTM segments
 """,
-
         "214_freight_details.txt": """
 X12 214 - Motor Carrier Freight Details and Invoice
 
@@ -241,7 +227,6 @@ Data Quality:
 - Freight charges must be positive
 - Origin/destination must have valid N4 segments
 """,
-
         "medallion_architecture.txt": """
 Medallion Architecture - Supply Chain Sentinel
 
@@ -269,8 +254,8 @@ Gold Layer:
 - Written by: pipeline/transforms/silver_to_gold.py
 
 Data Flow:
-EDI Files → Bronze (150) → Silver (137) → Gold (4 tables)
-                    ↓
+EDI Files -> Bronze (150) -> Silver (137) -> Gold (4 tables)
+                    |
           Silver Quarantine (5-7)
 
 Orchestration: Airflow 3 (LocalExecutor)
@@ -286,9 +271,8 @@ Storage: Delta Lake on local filesystem
 
 
 if __name__ == "__main__":
-    # Create seed docs, then ingest them
     create_seed_docs()
     ingest_docs()
-    # Test a query
     print("\n--- Test Query ---")
-    print(rag_lookup("What segments are required in an 856 ASN?"))   
+    print(rag_lookup("What segments are required in an 856 ASN?"))
+   

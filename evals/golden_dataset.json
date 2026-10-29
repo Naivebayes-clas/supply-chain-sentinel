@@ -1,0 +1,434 @@
+[
+  {
+    "id": 1,
+    "question": "Which carrier has the worst on-time rate?",
+    "expected_answer_contains": [
+      "worst",
+      "lowest",
+      "on-time",
+      "rate"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 2,
+    "question": "Which carrier has the best on-time rate?",
+    "expected_answer_contains": [
+      "best",
+      "highest",
+      "on-time",
+      "rate"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 3,
+    "question": "What is the average freight cost for FedEx?",
+    "expected_answer_contains": [
+      "fedex",
+      "freight",
+      "cost"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 4,
+    "question": "Which carrier has the highest total freight cost?",
+    "expected_answer_contains": [
+      "carrier",
+      "freight",
+      "cost",
+      "highest"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 5,
+    "question": "How many shipments did XPO handle?",
+    "expected_answer_contains": [
+      "xpo",
+      "shipment"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 6,
+    "question": "Compare on-time rates between UPS and FedEx",
+    "expected_answer_contains": [
+      "UPS",
+      "FedEx"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 7,
+    "question": "Which carrier is the cheapest per shipment?",
+    "expected_answer_contains": [
+      "cheapest",
+      "lowest",
+      "cost",
+      "freight"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 8,
+    "question": "What's the total freight spend across all carriers?",
+    "expected_answer_contains": [
+      "total",
+      "freight",
+      "cost",
+      "$"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 9,
+    "question": "Where are the most late shipments going?",
+    "expected_answer_contains": [
+      "mississauga",
+      "late",
+      "most"
+    ],
+    "expected_route": "exception_check",
+    "category": "exceptions"
+  },
+  {
+    "id": 10,
+    "question": "How many POs are affected by late shipments in Mississauga?",
+    "expected_answer_contains": [
+      "Mississauga"
+    ],
+    "expected_route": "exception_check",
+    "category": "exceptions"
+  },
+  {
+    "id": 11,
+    "question": "Which city has the most delivery exceptions?",
+    "expected_answer_contains": [
+      "mississauga",
+      "most",
+      "late"
+    ],
+    "expected_route": "exception_check",
+    "category": "exceptions"
+  },
+  {
+    "id": 12,
+    "question": "Are there any late shipments to Burlington?",
+    "expected_answer_contains": [
+      "Burlington"
+    ],
+    "expected_route": "exception_check",
+    "category": "exceptions"
+  },
+  {
+    "id": 13,
+    "question": "What destinations have delivery problems?",
+    "expected_answer_contains": [
+      "mississauga",
+      "burlington",
+      "late"
+    ],
+    "expected_route": "exception_check",
+    "category": "exceptions"
+  },
+  {
+    "id": 14,
+    "question": "Are there any anomalies in the daily on-time rate?",
+    "expected_answer_contains": [
+      "anomal",
+      "day"
+    ],
+    "expected_route": "anomaly_check",
+    "category": "anomaly_detection"
+  },
+  {
+    "id": 15,
+    "question": "Is there an unusual spike or dip in on-time performance?",
+    "expected_answer_contains": [
+      "on-time",
+      "deviat"
+    ],
+    "expected_route": "anomaly_check",
+    "category": "anomaly_detection"
+  },
+  {
+    "id": 16,
+    "question": "Are there any outliers in the KPI data?",
+    "expected_answer_contains": [
+      "outlier",
+      "anomal"
+    ],
+    "expected_route": "anomaly_check",
+    "category": "anomaly_detection"
+  },
+  {
+    "id": 17,
+    "question": "What's the z-score for the worst performing day?",
+    "expected_answer_contains": [
+      "z-score",
+      "1."
+    ],
+    "expected_route": "anomaly_check",
+    "category": "anomaly_detection"
+  },
+  {
+    "id": 18,
+    "question": "What segments are required in an 856 ASN?",
+    "expected_answer_contains": [
+      "bgm",
+      "dtm",
+      "ref",
+      "n1",
+      "man",
+      "se"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 19,
+    "question": "What is the BGM segment format in a purchase order?",
+    "expected_answer_contains": [
+      "bgm",
+      "po",
+      "00"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 20,
+    "question": "How do you link an 856 back to its purchase order?",
+    "expected_answer_contains": [
+      "REF",
+      "PB",
+      "PO"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 21,
+    "question": "What does the MAN segment contain in an ASN?",
+    "expected_answer_contains": [
+      "weight",
+      "MAN"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 22,
+    "question": "What is the FSN segment used for?",
+    "expected_answer_contains": [
+      "freight",
+      "charge",
+      "fsn",
+      "surcharge"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 23,
+    "question": "What date format does X12 use?",
+    "expected_answer_contains": [
+      "ccyyMMdd",
+      "8 digit",
+      "8-digit",
+      "yyyymmdd",
+      "8 digits"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 24,
+    "question": "What are common EDI data quality errors?",
+    "expected_answer_contains": [
+      "date",
+      "missing"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 25,
+    "question": "What is the DTM qualifier for ship date?",
+    "expected_answer_contains": [
+      "011",
+      "DTM"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 26,
+    "question": "What is the DTM qualifier for ETA?",
+    "expected_answer_contains": [
+      "016",
+      "DTM"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  },
+  {
+    "id": 27,
+    "question": "Show me the schema of the Gold tables",
+    "expected_answer_contains": [
+      "kpis_daily",
+      "carrier_perf"
+    ],
+    "expected_route": "schema_info",
+    "category": "schema"
+  },
+  {
+    "id": 28,
+    "question": "What tables are available in the Gold layer?",
+    "expected_answer_contains": [
+      "kpis_daily",
+      "carrier_perf",
+      "exceptions"
+    ],
+    "expected_route": "schema_info",
+    "category": "schema"
+  },
+  {
+    "id": 29,
+    "question": "What columns does the carrier_perf table have?",
+    "expected_answer_contains": [
+      "carrier_name",
+      "on_time_rate"
+    ],
+    "expected_route": "schema_info",
+    "category": "schema"
+  },
+  {
+    "id": 30,
+    "question": "What is the data type of on_time_rate?",
+    "expected_answer_contains": [
+      "double",
+      "0.0"
+    ],
+    "expected_route": "schema_info",
+    "category": "schema"
+  },
+  {
+    "id": 31,
+    "question": "What is the overall on-time rate for all carriers?",
+    "expected_answer_contains": [
+      "on-time",
+      "rate",
+      "%"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 32,
+    "question": "How many total shipments are in the system?",
+    "expected_answer_contains": [
+      "shipments"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 33,
+    "question": "What is the average weight of shipments?",
+    "expected_answer_contains": [
+      "weight",
+      "kg"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 34,
+    "question": "What is the on-time rate for the most recent day?",
+    "expected_answer_contains": [
+      "on-time",
+      "rate"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 35,
+    "question": "Show daily shipment volume for October",
+    "expected_answer_contains": [
+      "date",
+      "shipment",
+      "volume",
+      "october"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 36,
+    "question": "What is the volume trend by transaction type?",
+    "expected_answer_contains": [
+      "850",
+      "856",
+      "214",
+      "volume",
+      "trend"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 37,
+    "question": "Rank carriers by average freight cost from lowest to highest",
+    "expected_answer_contains": [
+      "carrier",
+      "$"
+    ],
+    "expected_route": "nl_query",
+    "category": "carrier_performance"
+  },
+  {
+    "id": 38,
+    "question": "What percentage of shipments are on-time?",
+    "expected_answer_contains": [
+      "%",
+      "on-time"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 39,
+    "question": "Give me an overall summary of carrier on-time rates and total shipment volume",
+    "expected_answer_contains": [
+      "carrier",
+      "on-time",
+      "shipments"
+    ],
+    "expected_route": "nl_query",
+    "category": "aggregations"
+  },
+  {
+    "id": 40,
+    "question": "What is the medallion architecture used in this system?",
+    "expected_answer_contains": [
+      "bronze",
+      "silver",
+      "gold",
+      "medallion"
+    ],
+    "expected_route": "rag_lookup",
+    "category": "edi_specs"
+  }
+]

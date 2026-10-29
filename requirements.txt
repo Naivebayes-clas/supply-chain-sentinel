@@ -1,5 +1,5 @@
 # === Data Layer ===
-pyspark
+pyspark==3.5.1
 delta-spark
 polars
 pandas

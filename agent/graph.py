@@ -1,20 +1,12 @@
 """
 LangGraph Agent: routes user questions to the appropriate tool/node.
-
-Graph structure:
-    [START] → [planner] → [nl_query] → [execute_query] → [respond] → [END]
-                         → [carrier_check] → [respond] → [END]
-                         → [exception_check] → [respond] → [END]
-                         → [anomaly_check] → [respond] → [END]
-                         → [rag_lookup] → [respond] → [END]
-                         → [schema_info] → [respond] → [END]
+6 routing paths: nl_query, carrier_check, exception_check, anomaly_check, rag_lookup, schema_info
 """
-import json
 import re
+import os
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-import os
 
 
 # ──────────────────────────────────────────────
@@ -25,7 +17,7 @@ class AgentState(TypedDict):
     plan: str
     sql: Optional[str]
     result: Optional[str]
-    context: Optional[str]       # RAG context
+    context: Optional[str]
     answer: Optional[str]
     error: Optional[str]
 
@@ -48,20 +40,66 @@ def planner(state: AgentState) -> dict:
     """Decide which tool handles the question."""
     q = state["question"].lower()
 
-    if any(kw in q for kw in ["schema", "table", "column", "field", "structure", "what tables"]):
-        plan = "schema_info"
-    elif any(kw in q for kw in ["anomaly", "anomal", "outlier", "spike", "deviation", "z-score", "unusual"]):
-        plan = "anomaly_check"
-    elif any(kw in q for kw in ["segment", "format", "spec", "required field", "what is an 85", "what is a 214", "edi spec", "how to parse"]):
-        plan = "rag_lookup"
-    elif any(kw in q for kw in ["carrier", "on-time rate", "freight cost", "performance", "which carrier"]):
-        plan = "carrier_check"
-    elif any(kw in q for kw in ["exception", "late", "mississauga", "burlington", "delay", "problem", "where are"]):
-        plan = "exception_check"
-    else:
-        plan = "nl_query"
+    def has_word(words: list[str]) -> bool:
+        for w in words:
+            if len(w) <= 4:
+                if re.search(r'\b' + re.escape(w) + r'\b', q):
+                    return True
+            else:
+                if w in q:
+                    return True
+        return False
 
-    return {"plan": plan}
+    # 1. Schema
+    if has_word([
+        "schema", "what tables", "what columns", "data type",
+        "table structure", "what tables are available",
+    ]):
+        return {"plan": "schema_info"}
+
+    # 2. Anomaly (check before RAG to avoid "spike" matching RAG)
+    if has_word([
+        "anomaly", "anomalies", "outlier", "outliers", "spike",
+        "deviation", "z-score", "z score", "unusual", "statistically",
+    ]):
+        return {"plan": "anomaly_check"}
+
+    # 3. RAG: EDI specs, formats, architecture
+    if has_word([
+        "segment", "segments", "format", "spec", "specification",
+        "required field", "required segment",
+        "what is an 85", "what is a 214", "edi spec", "how to parse",
+        "medallion", "architecture", "pipeline",
+        "bronze", "silver", "gold layer",
+        "dtm", "bgm", "fsn", "isa", "iea",
+        "qualifier", "link an 85", "link back", "how do you link",
+        "data quality", "common errors", "date format",
+        "how does", "what is the medallion", "what is the pipeline",
+    ]):
+        if re.search(r'\bman\b', q) or re.search(r'\bref\b', q):
+            return {"plan": "rag_lookup"}
+        return {"plan": "rag_lookup"}
+
+    # 4. Exception check
+    if has_word([
+        "late shipment", "late shipments", "delivery exception",
+        "delivery exceptions", "delivery problem", "delivery problems",
+        "where are the most late", "most late",
+        "destinations have delivery", "affected by late",
+        "late shipments to", "show exceptions", "list exceptions",
+        "show me the late",
+    ]):
+        return {"plan": "exception_check"}
+
+    # 5. Carrier check: ONLY raw table dump
+    if has_word([
+        "show carrier performance", "carrier performance data",
+        "show me the carriers", "list all carriers",
+    ]):
+        return {"plan": "carrier_check"}
+
+    # 6. Default: nl_query
+    return {"plan": "nl_query"}
 
 
 # ──────────────────────────────────────────────
@@ -70,23 +108,46 @@ def planner(state: AgentState) -> dict:
 def nl_query(state: AgentState) -> dict:
     """Generate SQL from natural language."""
     llm = get_llm()
+
     schema = """
-Available tables:
-- kpis_daily: date, total_shipments, tracked_shipments, on_time_rate, avg_weight_kg
-- carrier_perf: carrier_name, total_shipments, tracked_shipments, on_time_rate, avg_freight_cost, total_freight_cost
-- exceptions_by_dest: ship_to_city, late_count, affected_pos
-- volume_trend: week, transaction_type, count
+You have access to EXACTLY these 4 SQL tables (use these exact names in FROM clauses, no prefix):
+
+TABLE carrier_perf:
+  - carrier_name (string): 'XPO', 'FedEx', 'UPS', 'Old Dominion', 'Estes'
+  - total_shipments (int)
+  - tracked_shipments (int)
+  - on_time_rate (double): 0.0 to 1.0
+  - avg_freight_cost (double): dollars
+  - total_freight_cost (double): dollars
+
+TABLE kpis_daily:
+  - date (string): 'yyyy-MM-dd'
+  - total_shipments (int)
+  - tracked_shipments (int)
+  - on_time_rate (double): 0.0 to 1.0
+  - avg_weight_kg (double)
+
+TABLE exceptions_by_dest:
+  - ship_to_city (string): 'Mississauga', 'Burlington', 'Hamilton'
+  - late_count (int)
+  - affected_pos (int)
+
+TABLE volume_trend:
+  - week (string): 'yyyy-MM'
+  - transaction_type (string): '850', '856', '214'
+  - count (int)
+
+RULES:
+- ALWAYS include the metric being asked about in your SELECT
+- If asked for a rate/percentage, SELECT the rate column
+- If asked for a count, SELECT the count or use COUNT(*)
+- If asked to rank/compare, SELECT both the identifier AND the metric
+- Use EXACT table and column names above
+- Only SELECT queries, no JOINs needed
+- Return ONLY the SQL, no explanation, no markdown fences
 """
-    prompt = f"""You are a SQL expert for a logistics data platform.
-Given the schema below, write a single SELECT query that answers the user's question.
-Return ONLY the SQL, no explanation.
 
-Schema:
-{schema}
-
-User question: {state['question']}
-
-SQL:"""
+    prompt = f"{schema}\n\nUser question: {state['question']}\n\nSQL:"
     response = llm.invoke(prompt)
     sql = response.content.strip()
     sql = re.sub(r'^```sql?\n?', '', sql)
@@ -98,8 +159,8 @@ SQL:"""
 # Node: Execute SQL
 # ──────────────────────────────────────────────
 def execute_query(state: AgentState) -> dict:
-    from agent.tools.mcp_server import query_gold
-    result = query_gold(state["sql"])
+    from agent.tools.mcp_server import _query_gold_internal
+    result = _query_gold_internal(state["sql"])
     return {"result": result}
 
 
@@ -120,7 +181,7 @@ def exception_check(state: AgentState) -> dict:
 
 
 # ──────────────────────────────────────────────
-# Node: Anomaly Detection (NEW)
+# Node: Anomaly Detection
 # ──────────────────────────────────────────────
 def anomaly_check(state: AgentState) -> dict:
     from agent.nodes.anomaly import anomaly_check as detect
@@ -128,11 +189,11 @@ def anomaly_check(state: AgentState) -> dict:
 
 
 # ──────────────────────────────────────────────
-# Node: RAG Lookup (NEW)
+# Node: RAG Lookup
 # ──────────────────────────────────────────────
-def rag_lookup(state: AgentState) -> dict:
-    from agent.nodes.rag_lookup import rag_lookup as lookup
-    context = lookup(state["question"])
+def rag_lookup_node(state: AgentState) -> dict:
+    from agent.nodes.rag_lookup import rag_lookup
+    context = rag_lookup(state["question"])
     return {"context": context, "result": context}
 
 
@@ -148,24 +209,25 @@ def schema_info(state: AgentState) -> dict:
 # Node: Respond
 # ──────────────────────────────────────────────
 def respond(state: AgentState) -> dict:
+    """Generate a natural language answer."""
     llm = get_llm()
 
-    # For RAG, include context in the prompt
     if state.get("context") and state["plan"] == "rag_lookup":
-        prompt = f"""You are a logistics data engineer. Answer the user's question
-using the retrieved EDI specification context below. Be specific and cite the
-segment names. If the context doesn't fully answer the question, say so.
+        prompt = f"""You are a logistics data engineer. The user is asking about
+EDI specifications. Below is the relevant reference document. Extract the answer
+directly from it. Quote exact segment codes, qualifiers, and field positions
+verbatim (e.g. "DTM*011", "BGM*BLSV", "REF*PB", "CCYYMMDD").
 
 User question: {state['question']}
 
-Retrieved context:
+Reference document:
 {state['context']}
 
-Answer:"""
+Your answer:"""
     else:
-        prompt = f"""You are a logistics operations analyst. Answer the user's question
-using the data provided. Be concise and specific. Use numbers. If the data shows
-a clear pattern or outlier, highlight it.
+        prompt = f"""You are a logistics operations analyst. Answer the user's
+question using the data below. Be specific. Use the exact numbers from the data.
+If the data shows an error or is empty, say "I could not retrieve that data."
 
 User question: {state['question']}
 
@@ -205,7 +267,7 @@ def build_graph():
     graph.add_node("carrier_check", carrier_check)
     graph.add_node("exception_check", exception_check)
     graph.add_node("anomaly_check", anomaly_check)
-    graph.add_node("rag_lookup", rag_lookup)
+    graph.add_node("rag_lookup", rag_lookup_node)
     graph.add_node("schema_info", schema_info)
     graph.add_node("respond", respond)
 
@@ -261,4 +323,5 @@ if __name__ == "__main__":
     ]
     for q in test_questions:
         print(f"\nQ: {q}")
-        print(f"A: {ask(q)}")   
+        print(f"A: {ask(q)}")
+   
