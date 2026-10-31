@@ -194,3 +194,10 @@ starts everything, a committed eval report, and a UI you can demo in 2 minutes.
 | **ruff**           | Linter                              |
 | **mypy**           | Type checker                        |
 | **GitHub Actions** | CI: lint + test on every push       |
+
+https://github.com/user-attachments/assets/6d07137d-1f1f-4a2e-af44-36689dce2965
+
+https://github.com/user-attachments/assets/5158ee74-6158-43dd-b55d-40dcf6915a63
+
+<img width="1294" height="642" alt="carrier_performance_dashboard" src="https://github.com/user-attachments/assets/e17db5f7-334c-46ad-8091-9f0795fd0dd5" />
+
